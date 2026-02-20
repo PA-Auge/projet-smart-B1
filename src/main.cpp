@@ -80,8 +80,8 @@ int get_middle_offset();
 
 /*
 0 : non-identifié
-1 : vert
-2 : rouge
+1 : rouge
+2 : vert
 */
 int get_color();
 
@@ -126,12 +126,12 @@ void setup() {
 
 void loop() {
   if (!move) {
-    if (get_color() == 1){
+    if ( get_color() == 2 ) {
       move = true;
     }
   }
   else {
-    if (get_color() == 2) {
+    if ( get_color() == 1 ) {
       move = false;
       stop_distance = 0;
     }
@@ -154,5 +154,15 @@ int get_middle_offset()
 
 int get_color()
 {
-  
+  int r = RGB_sensor.readRed();
+  int g = RGB_sensor.readGreen();
+  int b = RGB_sensor.readBlue();
+
+  if ( r > 200 && g < 50 && b < 50 ) {
+    return 1;
+  }
+  if ( r < 50 && g > 200 && b < 50 ) {
+    return 2;
+  }
+  return 0;
 }
