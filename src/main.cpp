@@ -1,5 +1,10 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include <NewPing.h>
+#include <ICM20948_WE.h>
+#include <SparkFunISL29125.h>
+
+
 
 
 // ---------- classes du projet ----------
@@ -45,6 +50,10 @@ const int SONAR_MAX_DISTANCE = 100;
 NewPing sonar_l = NewPing(6,7, SONAR_MAX_DISTANCE);
 NewPing sonar_r = NewPing(8,9, SONAR_MAX_DISTANCE);
 
+#define ICM20948_ADDR 0x68
+ICM20948_WE imu = ICM20948_WE(ICM20948_ADDR);
+
+SFE_ISL29125 RGB_sensor;
 
 // ---------- variables et constantes globales ----------
 
@@ -76,11 +85,43 @@ int get_middle_offset();
 */
 int get_color();
 
-// met a jour le capteur IMU
-void update_imu();
-
 void setup() {
+  Wire.begin();
   Serial.begin(115200);
+  
+  while (!Serial) {}
+
+  // ----- verifications du capteur IMU -----
+  if (!imu.init()) {
+    Serial.println("L'IMU ne repond pas !");
+  }
+  else {
+    Serial.println("IMU connecté");
+  }
+
+  if (!imu.initMagnetometer()) {
+    Serial.println("Magnetometre non connecté");
+  }
+  else {
+    Serial.println("Magnetometre connecté");
+  }
+  
+  Serial.println("Calibration de l'IMU, posez a plat et ne plus le bougez plus");
+  delay(1000);
+  imu.autoOffsets();
+  Serial.println("Calibration finie");
+  imu.setAccRange(ICM20948_ACC_RANGE_2G);
+  imu.setAccDLPF(ICM20948_DLPF_6);
+  imu.setAccSampleRateDivider(10);
+
+  // ----- verification capteur RGB -----
+
+  if (!RGB_sensor.init()) {
+    Serial.println("Capteur RVB non connecté");
+  }
+  else {
+    Serial.println("Capteur RVB connecté");
+  }
 }
 
 void loop() {
@@ -112,11 +153,6 @@ int get_middle_offset()
 }
 
 int get_color()
-{
-  
-}
-
-void update_imu()
 {
   
 }
