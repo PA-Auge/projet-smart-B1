@@ -59,10 +59,14 @@ SFE_ISL29125 RGB_sensor;
 
 // puissance du moteur
 const float SPEED = 128; // entre 0 et 255 inclus
+const float ALLOWED_ANGLE_OFFSET = 10;
+const float ALLOWED_MIDDLE_OFFSET = 10;
 
 float angle_reference = 0;
+float angle_offset = 0;
+float current_speed = 0;
 float stop_distance = 0;
-bool move = true;
+bool move = false;
 
 
 // ---------- fonctions ----------
@@ -76,7 +80,12 @@ void set_speed(int speed,int motors_difference);
 negatif : plus proche de la gauche
 positif : plus proche de la droite
 */
-int get_middle_offset();
+float get_middle_offset();
+
+/*
+met a jour les données liées au capteur IMU
+*/
+void update_imu_data();
 
 /*
 0 : non-identifié
@@ -106,7 +115,7 @@ void setup() {
     Serial.println("Magnetometre connecté");
   }
   
-  Serial.println("Calibration de l'IMU, posez a plat et ne plus le bougez plus");
+  Serial.println("Calibration de l'IMU, posez a plat et ne le bougez plus");
   delay(1000);
   imu.autoOffsets();
   Serial.println("Calibration finie");
@@ -114,7 +123,7 @@ void setup() {
   imu.setAccDLPF(ICM20948_DLPF_6);
   imu.setAccSampleRateDivider(10);
 
-  // ----- verification capteur RGB -----
+  // ----- verification capteur RVB -----
 
   if (!RGB_sensor.init()) {
     Serial.println("Capteur RVB non connecté");
@@ -125,15 +134,77 @@ void setup() {
 }
 
 void loop() {
+  update_imu_data();
   if (!move) {
+    // ----- démarre le bateau si necessaire -----
     if ( get_color() == 2 ) {
       move = true;
+      return;
     }
+    if (stop_distance > 5) {
+        float middle_offset = get_middle_offset();
+      if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
+        set_speed(-SPEED, -50);
+      }
+      else if (middle_offset < ALLOWED_MIDDLE_OFFSET) {
+        set_speed(-SPEED, 50);
+      }
+      else if (angle_offset < ALLOWED_ANGLE_OFFSET) {
+        set_speed(-SPEED, -50);
+      }
+      else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
+        set_speed(-SPEED, 50);
+      }
+      else {
+        set_speed(-SPEED);
+      }
+    }
+    else if (stop_distance < 5) {
+        float middle_offset = get_middle_offset();
+      if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
+        set_speed(SPEED, 50);
+      }
+      else if (middle_offset < ALLOWED_MIDDLE_OFFSET) {
+        set_speed(SPEED, -50);
+      }
+      else if (angle_offset < ALLOWED_ANGLE_OFFSET) {
+        set_speed(SPEED, 50);
+      }
+      else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
+        set_speed(SPEED, -50);
+      }
+      else {
+        set_speed(SPEED);
+      }
+    }
+
+    // ----- réoriente le bateau si necessaire -----
+    // TODO
   }
   else {
+    // ----- arrete le bateau si nécéssaire -----
     if ( get_color() == 1 ) {
-      move = false;
+      move = false; 
       stop_distance = 0;
+      return;
+    }
+
+    // ----- réoriente le bateau si necessaire -----
+    float middle_offset = get_middle_offset();
+    if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
+      set_speed(SPEED, 50);
+    }
+    else if (middle_offset < ALLOWED_MIDDLE_OFFSET) {
+      set_speed(SPEED, -50);
+    }
+    else if (angle_offset < ALLOWED_ANGLE_OFFSET) {
+      set_speed(SPEED, 50);
+    }
+    else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
+      set_speed(SPEED, -50);
+    }
+    else {
+      set_speed(SPEED);
     }
   }
 
@@ -147,9 +218,20 @@ void set_speed(int speed, int motors_difference = 0)
   motor_right.update_speed(speed+motors_difference);
 }
 
-int get_middle_offset()
+float get_middle_offset()
 {
+  return sonar_l.ping_cm() - sonar_r.ping_cm();
+}
 
+void update_imu_data() {
+  xyzFloat acceleration;
+  imu.getCorrectedAccRawValues(&acceleration);
+  current_speed += acceleration.x * 0.1;
+  stop_distance += current_speed * 0.1;
+
+  xyzFloat angle;
+  imu.getAngles(&angle);
+  angle_offset += angle.z;
 }
 
 int get_color()
