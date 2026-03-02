@@ -24,10 +24,10 @@ class Motor {
             pinMode(PIN_SPEED, OUTPUT);
         };
 
-        int update_speed(int speed);
+        void update_speed(int speed);
 };
 
-int Motor::update_speed(int speed) {
+void Motor::update_speed(int speed) {
   if (speed < 0) {
     digitalWrite(this->PIN_1, HIGH);
     digitalWrite(this->PIN_2, LOW);
@@ -37,7 +37,7 @@ int Motor::update_speed(int speed) {
     digitalWrite(this->PIN_2, HIGH);
   }
   analogWrite(this->PIN_SPEED, abs(speed));
-};
+}
 
 
 // ---------- composants et variables/constantes associées ----------
@@ -74,7 +74,7 @@ bool move = false;
 speed : declare la vitesse de base des moteurs
 motor_difference : ecart de vitesse des moteurs par rapport a la vitesse de base (s'ajoute a la puissance du moteur gauche et se soustrait a la puissance du moteur droit)
 */ 
-void set_speed(int speed,int motors_difference);
+void set_speed(int speed,int motors_difference = 0);
 
 /*
 negatif : plus proche de la gauche
@@ -148,10 +148,10 @@ void loop() {
       if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
         set_speed(-SPEED, -50);
       }
-      else if (middle_offset < ALLOWED_MIDDLE_OFFSET) {
+      else if (middle_offset < -ALLOWED_MIDDLE_OFFSET) {
         set_speed(-SPEED, 50);
       }
-      else if (angle_offset < ALLOWED_ANGLE_OFFSET) {
+      else if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
         set_speed(-SPEED, -50);
       }
       else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
@@ -162,16 +162,16 @@ void loop() {
       }
     }
 	// ----- fait avancer le bateau si il est derriere la position d'arret
-    else if (stop_distance < 5) {
+    else if (stop_distance < -5) {
         float middle_offset = get_middle_offset();
 	  // ----- reoriente le bateau si necessaire -----
       if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
         set_speed(SPEED, 50);
       }
-      else if (middle_offset < ALLOWED_MIDDLE_OFFSET) {
+      else if (middle_offset < -ALLOWED_MIDDLE_OFFSET) {
         set_speed(SPEED, -50);
       }
-      else if (angle_offset < ALLOWED_ANGLE_OFFSET) {
+      else if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
         set_speed(SPEED, 50);
       }
       else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
@@ -195,10 +195,10 @@ void loop() {
     if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
       set_speed(SPEED, 50);
     }
-    else if (middle_offset < ALLOWED_MIDDLE_OFFSET) {
+    else if (middle_offset < -ALLOWED_MIDDLE_OFFSET) {
       set_speed(SPEED, -50);
     }
-    else if (angle_offset < ALLOWED_ANGLE_OFFSET) {
+    else if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
       set_speed(SPEED, 50);
     }
     else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
