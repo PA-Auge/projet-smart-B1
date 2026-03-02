@@ -141,8 +141,10 @@ void loop() {
       move = true;
       return;
     }
+	// ----- fait reculer le bateau si il est devant la position d'arret -----
     if (stop_distance > 5) {
         float middle_offset = get_middle_offset();
+	  // ----- reoriente le bateau si necessaire -----
       if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
         set_speed(-SPEED, -50);
       }
@@ -159,8 +161,10 @@ void loop() {
         set_speed(-SPEED);
       }
     }
+	// ----- fait avancer le bateau si il est derriere la position d'arret
     else if (stop_distance < 5) {
         float middle_offset = get_middle_offset();
+	  // ----- reoriente le bateau si necessaire -----
       if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
         set_speed(SPEED, 50);
       }
@@ -177,9 +181,6 @@ void loop() {
         set_speed(SPEED);
       }
     }
-
-    // ----- réoriente le bateau si necessaire -----
-    // TODO
   }
   else {
     // ----- arrete le bateau si nécéssaire -----
