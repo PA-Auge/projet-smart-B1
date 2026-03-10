@@ -55,6 +55,54 @@ ICM20948_WE imu = ICM20948_WE(ICM20948_ADDR);
 
 SFE_ISL29125 RGB_sensor;
 
+// ---------- enumerateurs ----------
+
+enum class Color 
+{
+  Green,
+  Red,
+  Any
+};
+
+enum class Direction 
+{
+  Stop,
+  Forward,
+  Backward
+};
+
+enum class Orientation
+{
+  Neutral,
+  Left,
+  Right
+};
+
+enum class Intensity 
+{
+  Low,
+  Normal,
+  High
+};
+
+// ---------- structs ----------
+
+struct BoatMovement
+{
+  struct DirectionParameters
+  {
+    Direction direction = Direction::Stop;
+    Intensity intensity = Intensity::Normal;
+  } direction;
+  struct OrientationParameters
+  {
+    Orientation rotation = Orientation::Neutral;
+    Intensity intensity = Intensity::Normal;
+  } rotation;
+} movements;
+
+
+
 // ---------- variables et constantes globales ----------
 
 // puissance du moteur
@@ -88,11 +136,11 @@ met a jour les données liées au capteur IMU
 void update_imu_data();
 
 /*
-0 : non-identifié
-1 : rouge
-2 : vert
+donne la couleur captée par le capteur
 */
-int get_color();
+Color get_color();
+
+void update_movements();
 
 void setup() {
   Wire.begin();
@@ -135,80 +183,99 @@ void setup() {
 
 void loop() {
   update_imu_data();
-  if (!move) {
-    // ----- démarre le bateau si necessaire -----
-    if ( get_color() == 2 ) {
-      move = true;
-      return;
-    }
-	// ----- fait reculer le bateau si il est devant la position d'arret -----
-    if (stop_distance > 5) {
-        float middle_offset = get_middle_offset();
-	  // ----- reoriente le bateau si necessaire -----
-      if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
-        set_speed(-SPEED, -50);
-      }
-      else if (middle_offset < -ALLOWED_MIDDLE_OFFSET) {
-        set_speed(-SPEED, 50);
-      }
-      else if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
-        set_speed(-SPEED, -50);
-      }
-      else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
-        set_speed(-SPEED, 50);
-      }
-      else {
-        set_speed(-SPEED);
-      }
-    }
-	// ----- fait avancer le bateau si il est derriere la position d'arret
-    else if (stop_distance < -5) {
-        float middle_offset = get_middle_offset();
-	  // ----- reoriente le bateau si necessaire -----
-      if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
-        set_speed(SPEED, 50);
-      }
-      else if (middle_offset < -ALLOWED_MIDDLE_OFFSET) {
-        set_speed(SPEED, -50);
-      }
-      else if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
-        set_speed(SPEED, 50);
-      }
-      else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
-        set_speed(SPEED, -50);
-      }
-      else {
-        set_speed(SPEED);
-      }
-    }
-  }
-  else {
-    // ----- arrete le bateau si nécéssaire -----
-    if ( get_color() == 1 ) {
-      move = false; 
-      stop_distance = 0;
-      return;
-    }
+  update_movements();
 
-    // ----- réoriente le bateau si necessaire -----
-    float middle_offset = get_middle_offset();
-    if (middle_offset > ALLOWED_MIDDLE_OFFSET) {
-      set_speed(SPEED, 50);
-    }
-    else if (middle_offset < -ALLOWED_MIDDLE_OFFSET) {
-      set_speed(SPEED, -50);
-    }
-    else if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
-      set_speed(SPEED, 50);
-    }
-    else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
-      set_speed(SPEED, -50);
-    }
-    else {
-      set_speed(SPEED);
-    }
-  }
+  switch (movements.direction.direction)
+  {
+    case Direction::Stop:
+      switch (movements.rotation.rotation)
+      {
+        case Orientation::Neutral:
+          set_speed(0,0);
+          break;
+        
+        case Orientation::Left:
+          switch (movements.rotation.intensity)
+          {
+            case Intensity::Low:
+              set_speed(0, -SPEED/4);
+              break;
+            
+            case Intensity::Normal:
+              set_speed(0, -SPEED/2);
+              break;
 
+            case Intensity::High:
+              set_speed(0, -SPEED);
+              break;
+          }
+          break;
+
+        case Orientation::Right:
+          switch (movements.rotation.intensity)
+          {
+            case Intensity::Low:
+              set_speed(0, SPEED/4);
+              break;
+            
+            case Intensity::Normal:
+              set_speed(0, SPEED/2);
+              break;
+
+            case Intensity::High:
+              set_speed(0, SPEED);
+              break;
+          }
+          break;
+      }
+      break;
+
+    case Direction::Forward:
+      switch (movements.rotation.rotation)
+      {
+        case Orientation::Neutral:
+          switch (movements.direction.intensity)
+          {
+            case Intensity::Low:
+              set_speed(SPEED/2);
+              break;
+            
+            case Intensity::Normal:
+              set_speed(SPEED);
+              break;
+
+            case Intensity::High:
+              set_speed(SPEED*1.5);
+              break;
+          }
+        
+        case Orientation::Left:
+          /* code */
+          break;
+
+        case Orientation::Right:
+          /* code */
+          break;
+      }
+      break;
+
+    case Direction::Backward:
+      switch (movements.rotation.rotation)
+      {
+        case Orientation::Neutral:
+          /* code */
+          break;
+        
+        case Orientation::Left:
+          /* code */
+          break;
+
+        case Orientation::Right:
+          /* code */
+          break;
+      }
+      break;
+  }
   delay(100);
 }
 
@@ -235,17 +302,17 @@ void update_imu_data() {
   angle_offset += angle.z;
 }
 
-int get_color()
+Color get_color()
 {
   int r = RGB_sensor.readRed();
   int g = RGB_sensor.readGreen();
   int b = RGB_sensor.readBlue();
 
   if ( r > 200 && g < 50 && b < 50 ) {
-    return 1;
+    return Color::Red;
   }
   if ( r < 50 && g > 200 && b < 50 ) {
-    return 2;
+    return Color::Green;
   }
-  return 0;
+  return Color::Any;
 }
