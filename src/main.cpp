@@ -81,7 +81,7 @@ enum class Orientation
 enum class Intensity 
 {
   Low,
-  Normal,
+  Medium,
   High
 };
 
@@ -92,12 +92,12 @@ struct BoatMovement
   struct DirectionParameters
   {
     Direction direction = Direction::Stop;
-    Intensity intensity = Intensity::Normal;
+    Intensity intensity = Intensity::Medium;
   } direction;
   struct OrientationParameters
   {
     Orientation rotation = Orientation::Neutral;
-    Intensity intensity = Intensity::Normal;
+    Intensity intensity = Intensity::Medium;
   } rotation;
 } movements;
 
@@ -185,97 +185,91 @@ void loop() {
   update_imu_data();
   update_movements();
 
-  switch (movements.direction.direction)
+  int speed;
+  int motot_diff;
+
+  switch (movements.direction.direction) 
   {
     case Direction::Stop:
-      switch (movements.rotation.rotation)
-      {
-        case Orientation::Neutral:
-          set_speed(0,0);
-          break;
-        
-        case Orientation::Left:
-          switch (movements.rotation.intensity)
-          {
-            case Intensity::Low:
-              set_speed(0, -SPEED/4);
-              break;
-            
-            case Intensity::Normal:
-              set_speed(0, -SPEED/2);
-              break;
-
-            case Intensity::High:
-              set_speed(0, -SPEED);
-              break;
-          }
-          break;
-
-        case Orientation::Right:
-          switch (movements.rotation.intensity)
-          {
-            case Intensity::Low:
-              set_speed(0, SPEED/4);
-              break;
-            
-            case Intensity::Normal:
-              set_speed(0, SPEED/2);
-              break;
-
-            case Intensity::High:
-              set_speed(0, SPEED);
-              break;
-          }
-          break;
-      }
+      speed = 0;
       break;
-
+    
     case Direction::Forward:
-      switch (movements.rotation.rotation)
+      switch (movements.direction.intensity)
       {
-        case Orientation::Neutral:
-          switch (movements.direction.intensity)
-          {
-            case Intensity::Low:
-              set_speed(SPEED/2);
-              break;
-            
-            case Intensity::Normal:
-              set_speed(SPEED);
-              break;
-
-            case Intensity::High:
-              set_speed(SPEED*1.5);
-              break;
-          }
+        case Intensity::Low:
+          speed = SPEED/3;
+          break;
         
-        case Orientation::Left:
-          /* code */
+        case Intensity::Medium:
+          speed = SPEED/2;
           break;
 
-        case Orientation::Right:
-          /* code */
+        case Intensity::High:
+          speed = SPEED;
           break;
       }
-      break;
 
     case Direction::Backward:
-      switch (movements.rotation.rotation)
+      switch (movements.direction.intensity)
       {
-        case Orientation::Neutral:
-          /* code */
+        case Intensity::Low:
+          speed = -SPEED/3;
           break;
         
-        case Orientation::Left:
-          /* code */
+        case Intensity::Medium:
+          speed = -SPEED/2;
           break;
 
-        case Orientation::Right:
-          /* code */
+        case Intensity::High:
+          speed = -SPEED;
           break;
       }
+  }
+
+  switch (movements.rotation.rotation)
+  {
+    case Orientation::Neutral:
+      break;
+    
+    case Orientation::Left:
+      switch (movements.rotation.intensity)
+      {
+        case Intensity::Low:
+          motot_diff = -speed/3;
+          break;
+        
+        case Intensity::Medium:
+          motot_diff = -speed/2;
+          break;
+
+        case Intensity::High:
+          motot_diff = -SPEED;
+          speed = 0;
+          break;
+      }
+
+      case Orientation::Right:
+      switch (movements.rotation.intensity)
+      {
+        case Intensity::Low:
+          motot_diff = speed/3;
+          break;
+        
+        case Intensity::Medium:
+          motot_diff = speed/2;
+          break;
+
+        case Intensity::High:
+          motot_diff = SPEED;
+          speed = 0;
+          break;
+      } 
       break;
   }
+
+  set_speed(speed, motot_diff);
+  
   delay(100);
 }
 
