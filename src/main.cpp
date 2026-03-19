@@ -411,10 +411,10 @@ Color get_color()
   int g = RGB_sensor.readGreen();
   int b = RGB_sensor.readBlue();
 
-  if ( r > 200 && g < 50 && b < 50 ) {
+  if ( r > 15000 && g < 5000 && b < 5000 ) {
     return Color::Red;
   }
-  if ( r < 50 && g > 200 && b < 50 ) {
+  if ( r < 5000 && g > 25000 && b < 5000 ) {
     return Color::Green;
   }
   return Color::Any;
