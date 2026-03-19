@@ -24,7 +24,7 @@ class Motor {
             pinMode(PIN_SPEED, OUTPUT);
         };
 
-        void update_speed(int speed);
+        void update_speed(int);
 };
 
 void Motor::update_speed(int speed) {
@@ -108,7 +108,11 @@ struct BoatMovement
 // puissance du moteur
 const float SPEED = 128; // entre 0 et 255 inclus
 const float ALLOWED_ANGLE_OFFSET = 10;
+const float CRITICAL_ANGLE_OFFSET = 30;
 const float ALLOWED_MIDDLE_OFFSET = 10;
+const float CRITICAL_MIDDLE_OFFSET = 20;
+const float STOP_OFFSET = 5;
+const float SPEED_REF = 1;
 
 float angle_reference = 0;
 float angle_offset = 0;
@@ -185,8 +189,8 @@ void loop() {
   update_imu_data();
   update_movements();
 
-  int speed;
-  int motot_diff;
+  int speed = 0;
+  int motot_diff = 0;
 
   switch (movements.direction.direction) 
   {
@@ -271,6 +275,111 @@ void loop() {
   set_speed(speed, motot_diff);
   
   delay(100);
+}
+
+void update_movements()
+{
+  int offset = get_middle_offset();
+  int rotation_intensity = 0;
+  if (offset < -ALLOWED_MIDDLE_OFFSET) {
+    rotation_intensity ++;
+  }
+  else if (offset > ALLOWED_MIDDLE_OFFSET) {
+    rotation_intensity --;
+  }
+  if (offset < -CRITICAL_MIDDLE_OFFSET) {
+    rotation_intensity ++;
+  }
+  else if (offset > CRITICAL_MIDDLE_OFFSET) {
+    rotation_intensity --;
+  }
+
+  if (angle_offset < -ALLOWED_ANGLE_OFFSET) {
+    rotation_intensity ++;
+  }
+  else if (angle_offset > ALLOWED_ANGLE_OFFSET) {
+    rotation_intensity --;
+  }
+  if (angle_offset < -CRITICAL_ANGLE_OFFSET) {
+    rotation_intensity ++;
+  }
+  else if (angle_offset > CRITICAL_ANGLE_OFFSET) {
+    rotation_intensity --;
+  }
+
+  int direction_intensity = 0;
+  if (!move) {
+    
+    float d = abs(stop_distance);
+    if (d > STOP_OFFSET) {
+      direction_intensity++;
+    }
+    if (d > 2*STOP_OFFSET) {
+      direction_intensity++;
+    }
+    if (d > 3*STOP_OFFSET) {
+      direction_intensity++;
+    }
+    if (current_speed > SPEED_REF) {
+      direction_intensity--;
+    }
+    if (current_speed > 2*SPEED_REF) {
+      direction_intensity*=-1;
+    }
+
+    if (stop_distance < d) {
+      direction_intensity = 0;
+    }
+    else if (stop_distance > STOP_OFFSET) {
+      direction_intensity*=-1;
+    }
+  }
+  else {
+    direction_intensity = 2;
+    rotation_intensity = 0;
+  }
+
+  if (direction_intensity > 0) {
+    movements.direction.direction = Direction::Forward;
+  }
+  else if (direction_intensity < 0) {
+    movements.direction.direction = Direction::Backward;
+    direction_intensity*=-1;
+  }
+  else {
+    movements.direction.direction = Direction::Stop;
+  }
+
+  if (direction_intensity == 1) {
+    movements.direction.intensity = Intensity::Low;
+  }
+  if (direction_intensity == 2) {
+    movements.direction.intensity = Intensity::Medium;
+  }
+  if (direction_intensity >= 3) {
+    movements.direction.intensity = Intensity::High;
+  }
+
+  if (rotation_intensity > 0) {
+    movements.rotation.rotation = Orientation::Right;
+  }
+  else if (rotation_intensity < 0) {
+    movements.rotation.rotation = Orientation::Left;
+    rotation_intensity*=-1;
+  }
+  else {
+    movements.rotation.rotation = Orientation::Neutral;
+  }
+
+  if (rotation_intensity == 1) {
+    movements.rotation.intensity = Intensity::Low;
+  }
+  if (rotation_intensity == 2) {
+    movements.rotation.intensity = Intensity::Medium;
+  }
+  if (rotation_intensity >= 3) {
+    movements.rotation.intensity = Intensity::High;
+  }
 }
 
 
