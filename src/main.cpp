@@ -43,11 +43,11 @@ void Motor::update_speed(int speed) {
 // ---------- composants et variables/constantes associées ----------
 
 
-Motor motor_left = Motor(0, 1, 2);
-Motor motor_right = Motor(3, 4, 5);
+Motor motor_left = Motor(4, 5, 3);
+Motor motor_right = Motor(6, 7, 2);
 
 const int SONAR_MAX_DISTANCE = 100;
-NewPing sonar_l = NewPing(6,7, SONAR_MAX_DISTANCE);
+NewPing sonar_l = NewPing(10,11, SONAR_MAX_DISTANCE);
 NewPing sonar_r = NewPing(8,9, SONAR_MAX_DISTANCE);
 
 #define ICM20948_ADDR 0x68
@@ -114,7 +114,6 @@ const float CRITICAL_MIDDLE_OFFSET = 20;
 const float STOP_OFFSET = 5;
 const float SPEED_REF = 1;
 
-float angle_reference = 0;
 float angle_offset = 0;
 float current_speed = 0;
 float stop_distance = 0;
@@ -279,6 +278,12 @@ void loop() {
 
 void update_movements()
 {
+  if (!move && get_color() == Color::Green) {
+    move = true;
+  }
+  else if (move && get_color() == Color::Red) {
+    move = false;
+  }
   int offset = get_middle_offset();
   int rotation_intensity = 0;
   if (offset < -ALLOWED_MIDDLE_OFFSET) {
