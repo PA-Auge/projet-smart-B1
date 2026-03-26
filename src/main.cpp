@@ -11,33 +11,28 @@
 
 class Motor {
     public : 
-        int PIN_1;
-        int PIN_2;
-        int PIN_SPEED;
+        int PIN_1, PIN_2, PIN_SPEED;
 
-        Motor(int pin_1, int pin_2, int pin_speed) {
-            PIN_1 = pin_1;
-            PIN_2 = pin_2;
-            PIN_SPEED = pin_speed;
+        Motor(int p1, int p2, int ps) : PIN_1(p1), PIN_2(p2), PIN_SPEED(ps) {}
+
+        void init() {
             pinMode(PIN_1, OUTPUT);
             pinMode(PIN_2, OUTPUT);
             pinMode(PIN_SPEED, OUTPUT);
-        };
+        }
 
-        void update_speed(int);
+        void update_speed(int speed) {
+            speed = constrain(speed, -255, 255); // Sécurité
+            if (speed < 0) {
+                digitalWrite(PIN_1, HIGH);
+                digitalWrite(PIN_2, LOW);
+            } else {
+                digitalWrite(PIN_1, LOW);
+                digitalWrite(PIN_2, HIGH);
+            }
+            analogWrite(PIN_SPEED, abs(speed));
+        }
 };
-
-void Motor::update_speed(int speed) {
-  if (speed < 0) {
-    digitalWrite(this->PIN_1, HIGH);
-    digitalWrite(this->PIN_2, LOW);
-  }
-  else {
-    digitalWrite(this->PIN_1, LOW);
-    digitalWrite(this->PIN_2, HIGH);
-  }
-  analogWrite(this->PIN_SPEED, abs(speed));
-}
 
 
 // ---------- composants et variables/constantes associées ----------
@@ -182,6 +177,8 @@ void setup() {
   else {
     Serial.println("Capteur RVB connecté");
   }
+  motor_left.init();
+  motor_right.init();
 }
 
 void loop() {
@@ -212,6 +209,7 @@ void loop() {
           speed = SPEED;
           break;
       }
+      break;
 
     case Direction::Backward:
       switch (movements.direction.intensity)
@@ -228,6 +226,7 @@ void loop() {
           speed = -SPEED;
           break;
       }
+      break;
   }
 
   switch (movements.rotation.rotation)
