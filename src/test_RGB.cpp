@@ -47,10 +47,10 @@ Color get_color()
   uint16_t r, g, b, c, colorTemp, lux;
   RGB_sensor.getRawData(&r, &g, &b, &c);
 
-  if ( r > 15000 && g < 5000 && b < 5000 ) {
+  if ( r > g*10/3 && r > b*10/3) {
     return Color::Red;
   }
-  if ( r < 5000 && g > 25000 && b < 5000 ) {
+  if ( g > r*8/3 && g > b*8/5) {
     return Color::Green;
   }
   return Color::Any;

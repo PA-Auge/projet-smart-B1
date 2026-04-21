@@ -1,9 +1,11 @@
+// \\\\\\\\\\\\\\\\\\\\ VALIDE /////////////////////
+
 #include <NewPing.h>
 
 #define SONAR_MAX_DISTANCE 100
 
 NewPing sonar_l = NewPing(9,10, SONAR_MAX_DISTANCE);
-NewPing sonar_r = NewPing(11,12, SONAR_MAX_DISTANCE);
+NewPing sonar_r = NewPing(12,11, SONAR_MAX_DISTANCE);
 
 void setup() 
 {
