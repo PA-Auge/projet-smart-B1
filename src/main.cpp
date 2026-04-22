@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <NewPing.h>
 #include <ICM20948_WE.h>
-#include <SparkFunISL29125.h>
+#include "Adafruit_TCS34725.h"
 
 
 
@@ -41,14 +41,14 @@ class Motor {
 Motor motor_left = Motor(4, 5, 3);
 Motor motor_right = Motor(6, 7, 2);
 
-const int SONAR_MAX_DISTANCE = 100;
+#define SONAR_MAX_DISTANCE 100
 NewPing sonar_l = NewPing(10,11, SONAR_MAX_DISTANCE);
 NewPing sonar_r = NewPing(8,9, SONAR_MAX_DISTANCE);
 
 #define ICM20948_ADDR 0x68
 ICM20948_WE imu = ICM20948_WE(ICM20948_ADDR);
 
-SFE_ISL29125 RGB_sensor;
+Adafruit_TCS34725 RGB_sensor = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_614MS, TCS34725_GAIN_1X);
 
 // ---------- enumerateurs ----------
 
@@ -144,8 +144,6 @@ void setup() {
   Wire.begin();
   Serial.begin(115200);
   
-  while (!Serial) {}
-
   // ----- verifications du capteur IMU -----
   if (!imu.init()) {
     Serial.println("L'IMU ne repond pas !");
@@ -171,14 +169,14 @@ void setup() {
 
   // ----- verification capteur RVB -----
 
-  if (!RGB_sensor.init()) {
+  if (!RGB_sensor.begin()) {
     Serial.println("Capteur RVB non connecté");
   }
   else {
     Serial.println("Capteur RVB connecté");
   }
   motor_left.init();
-  motor_right.init();
+  motor_right.init();  
 }
 
 void loop() {
@@ -271,6 +269,10 @@ void loop() {
   }
 
   set_speed(speed, motot_diff);
+  Serial.print("Speed : ");
+  Serial.println(speed);
+  Serial.print("Motor diff : ");
+  Serial.println(motot_diff);
   
   delay(100);
 }
@@ -411,9 +413,8 @@ void update_imu_data() {
 
 Color get_color()
 {
-  int r = RGB_sensor.readRed();
-  int g = RGB_sensor.readGreen();
-  int b = RGB_sensor.readBlue();
+  uint16_t r, g, b, c, colorTemp, lux;
+  RGB_sensor.getRawData(&r, &g, &b, &c);
 
   if ( r > 15000 && g < 5000 && b < 5000 ) {
     return Color::Red;
